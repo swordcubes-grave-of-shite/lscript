@@ -13,7 +13,7 @@ using StringTools;
 
 /**
  * The class used for making lua scripts.
- * 
+ *
  * Base code written by YoshiCrafter29 (https://github.com/YoshiCrafter29)
  * Fixed and tweaked by Srt (https://github.com/SrtHero278)
  */
@@ -25,6 +25,7 @@ class LScript {
 	public var parent(get, set):Dynamic;
 	public var script(get, null):Dynamic;
 	public var unsafe(default, null):Bool;
+	public var importAliases:Map<String, Dynamic> = [];
 	var toParse:String;
 
 	/**
@@ -33,7 +34,7 @@ class LScript {
 	public var specialVars:Map<Int, Dynamic> = [-1 => null];
 	public var avalibableIndexes:Array<Int> = [];
 	public var nextIndex:Int = 1;
-	
+
 	public function new(scriptCode:String, ?unsafe:Bool = false) {
 		luaState = LuaL.newstate();
 		if(unsafe)
@@ -45,7 +46,7 @@ class LScript {
 			LuaOpen.table(luaState);
 		}
 		this.unsafe = unsafe;
-		
+
 		Lua.register_hxtrace_func(Callable.fromStaticFunction(scriptTrace));
 		Lua.register_hxtrace_lib(luaState);
 
@@ -61,11 +62,11 @@ class LScript {
 		Lua.pushstring(luaState, '__index'); //This is a function in the metatable that is called when you to get a var that doesn't exist.
 		Lua.pushcfunction(luaState, MetatableFunctions.callIndex);
 		Lua.settable(luaState, metatableIndex);
-		
+
 		Lua.pushstring(luaState, '__newindex'); //This is a function in the metatable that is called when you to set a var that was originally null.
 		Lua.pushcfunction(luaState, MetatableFunctions.callNewIndex);
 		Lua.settable(luaState, metatableIndex);
-		
+
 		Lua.pushstring(luaState, '__call'); //This is a function in the metatable that is called when you call a function inside the table.
 		Lua.pushcfunction(luaState, MetatableFunctions.callMetatableCall);
 		Lua.settable(luaState, metatableIndex);
@@ -123,7 +124,7 @@ class LScript {
 		trace("Lua code was unable to be parsed.\n" + err);
 	}
 
-	public dynamic function functionError(func:String, err:String) {
+	public dynamic function functionError(func:String, line:Int, err:String) {
 		Sys.println(tracePrefix + 'Function("$func") Error: ${Lua.tostring(luaState, -1)}');
 	}
 
@@ -166,7 +167,7 @@ class LScript {
 
 		CustomConvert.toLua(newValue);
 		Lua.setglobal(luaState, name);
-		
+
 		currentLua = lastLua;
 	}
 
@@ -187,10 +188,13 @@ class LScript {
 	   		for (val in params)
 				CustomConvert.toLua(val);
 		}
-		
+
 		//Calls the function of the script. If it does not return 0, will trace what went wrong.
 		if (Lua.pcall(luaState, nparams, 1, 0) != 0) {
-			functionError(name, Lua.tostring(luaState, -1));
+    		var info:Lua_Debug = {};
+    		Lua.getstack(luaState, 1, info);
+    		Lua.getinfo(luaState, "l", info);
+			functionError(name, info.currentline, Lua.tostring(luaState, -1));
 			return null;
 		}
 

@@ -20,7 +20,7 @@ class ClassWorkarounds {
 		//Making the params for the function.
 		final nparams:Int = Lua.gettop(LScript.currentLua.luaState);
 		final params:Array<Dynamic> = [for(i in 0...nparams) CustomConvert.fromLua(-nparams + i)];
-		
+
 		final funcParams = [for (i in 1...params.length) params[i]];
 		params.splice(1, params.length);
 		params.push(funcParams);
@@ -51,12 +51,12 @@ class ClassWorkarounds {
 	public static function importClass(path:String, ?varName:String) {
 		final luaState = LScript.currentLua.luaState;
 
-		final importedClass = Type.resolveClass(path);
-		final importedEnum = Type.resolveEnum(path);
+		final importedClass:Class<Dynamic> = LScript.currentLua.importAliases.get(path) ?? Type.resolveClass(path);
+		final importedEnum:Enum<Dynamic> = LScript.currentLua.importAliases.get(path) ?? Type.resolveEnum(path);
 		final trimmedName = (varName != null) ? varName : path.substr(path.lastIndexOf(".") + 1, path.length);
 		if (importedClass != null) {
 			final tableIndex = CustomConvert.addToMetatable(importedClass, -1);
-			
+
 			Lua.pushstring(luaState, "new"); //This implements the work around function to create the class instance.
 			Lua.pushcfunction(luaState, workaroundCallable);
 			Lua.rawset(luaState, tableIndex);
@@ -64,10 +64,10 @@ class ClassWorkarounds {
 			Lua.setglobal(luaState, trimmedName);
 		} else if (importedEnum != null) {
 			final tableIndex = CustomConvert.addToMetatable(importedEnum, -1);
-			
+
 			LuaL.getmetatable(luaState, "__enumMetatable");
 			Lua.setmetatable(luaState, tableIndex);
-			
+
 			Lua.setglobal(luaState, trimmedName);
 		} else {
 			Sys.println('${LScript.currentLua.tracePrefix}Lua Import Error: Unable to find class from path "$path".');
@@ -80,6 +80,6 @@ class ClassWorkarounds {
 	 * @param varName               [OPTIONAL] The name to set the class to.
 	 */
 	public static function importClassSafe(path:String, ?varName:String) {
-		Logs.error('Could not import class "${path}" because this script is marked as safe.');	
+		Logs.error('Could not import class "${path}" because this script is marked as safe.');
 	}
 }
