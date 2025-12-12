@@ -124,7 +124,7 @@ class LScript {
 		trace("Lua code was unable to be parsed.\n" + err);
 	}
 
-	public dynamic function functionError(func:String, line:Int, err:String) {
+	public dynamic function functionError(func:String, err:String) {
 		Sys.println(tracePrefix + 'Function("$func") Error: ${Lua.tostring(luaState, -1)}');
 	}
 
@@ -191,10 +191,7 @@ class LScript {
 
 		//Calls the function of the script. If it does not return 0, will trace what went wrong.
 		if (Lua.pcall(luaState, nparams, 1, 0) != 0) {
-    		var info:Lua_Debug = {};
-    		Lua.getstack(luaState, 1, info);
-    		Lua.getinfo(luaState, "l", info);
-			functionError(name, info.currentline, Lua.tostring(luaState, -1));
+            functionError(name, Lua.tostring(luaState, -1));
 			return null;
 		}
 
