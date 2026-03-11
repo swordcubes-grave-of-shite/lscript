@@ -132,17 +132,18 @@ class LScript {
 		Sys.println('${tracePrefix}:${line}: ' + s);
 	}
 
+	static var traceInfo:Lua_Debug = {};
 	static inline function scriptTrace(s:String):Int {
-		var info:Lua_Debug = {};
-		Lua.getstack(currentLua.luaState, 1, info);
-		Lua.getinfo(currentLua.luaState, "l", info);
+		Lua.getstack(currentLua.luaState, 1, traceInfo);
+		Lua.getinfo(currentLua.luaState, "l", traceInfo);
 
 		var toTrace = "";
 		final numParams = Lua.gettop(currentLua.luaState);
+		
 		for (i in 0...(numParams - 1))
 			toTrace += Std.string(CustomConvert.fromLua(-numParams + i));
 
-		currentLua.print(info.currentline, toTrace);
+		currentLua.print(traceInfo.currentline, toTrace);
 		return 0;
 	}
 
