@@ -45,7 +45,7 @@ class CustomConvert {
 
 						Lua.settop(luaState, 0);
 						Lua.rawgeti(luaState, Lua.LUA_REGISTRYINDEX, ref);
-				
+
 						if (!Lua.isfunction(luaState, -1))
 							return null;
 
@@ -56,7 +56,7 @@ class CustomConvert {
 							for (val in params)
 								CustomConvert.toLua(val);
 						}
-						
+
 						//Calls the function of the script. If it does not return 0, will trace what went wrong.
 						if (Lua.pcall(luaState, nparams, 1, 0) != 0) {
 							Sys.println('${curLua.tracePrefix}Function(LOCAL) Error: ${Lua.tostring(luaState, -1)}');
@@ -72,9 +72,11 @@ class CustomConvert {
 
 					ret = Reflect.makeVarArgs(callLocalLuaFunc);
 				}
+			case Lua.LUA_TNONE:
+			    ret = null;
 			case idk:
 				ret = null;
-				Sys.println('${curLua.tracePrefix}Return value not supported: ${Std.string(idk)} - $stackPos');
+				Sys.println('${curLua.tracePrefix} Return value not supported: ${Std.string(idk)} - $stackPos');
 		}
 
 		//This is to check if the object has a special field and converts it back if so.
@@ -94,7 +96,7 @@ class CustomConvert {
 		final luaState = lua.luaState;
 		final location = (lua.avalibableIndexes.length > 0) ? lua.avalibableIndexes.shift() : lua.nextIndex;
 		lua.nextIndex += untyped __cpp__("{0}", lua.nextIndex == location);
-		lua.specialVars.set(location, val); 
+		lua.specialVars.set(location, val);
 
 		Lua.newtable(luaState);
 		final tableIndex = Lua.gettop(luaState); //The variable position of the table. Used for paring the metatable with this table and attaching variables.
