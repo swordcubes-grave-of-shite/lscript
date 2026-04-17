@@ -1,6 +1,5 @@
 package lscript;
 
-import funkin.backend.Logs;
 import lscript.LScript;
 import lscript.CustomConvert;
 
@@ -10,11 +9,13 @@ import llua.State;
 
 import cpp.Callable;
 
+typedef StatePointer = #if hl llua.State #else llua.State.StatePointer #end;
+
 class ClassWorkarounds {
 	/**
 	 * A function made to workaround class constructor functions not appering in class fields.
 	 */
-	public static final workaroundCallable:Callable<llua.State.StatePointer->Int> = Callable.fromStaticFunction(instanceWorkAround);
+	public static final workaroundCallable:Callable<StatePointer->Int> = Callable.fromStaticFunction(instanceWorkAround);
 
 	static function instanceWorkAround(state:StatePointer):Int {
 		//Making the params for the function.
@@ -80,6 +81,6 @@ class ClassWorkarounds {
 	 * @param varName               [OPTIONAL] The name to set the class to.
 	 */
 	public static function importClassSafe(path:String, ?varName:String) {
-		Logs.error('Could not import class "${path}" because this script is marked as safe.');
+		LScript.currentLua.unsafeImportError(path, varName);
 	}
 }

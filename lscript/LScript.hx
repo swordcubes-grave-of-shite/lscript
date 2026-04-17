@@ -154,6 +154,13 @@ class LScript {
 		Sys.println('${tracePrefix}:${line}: ' + s);
 	}
 
+	public dynamic function unsafeImportError(path:String, ?varName:String) {
+		if(varName != null)
+			Sys.println('${tracePrefix}Could not import class "${path}" as "${varName}" because this script is marked as safe.');
+		else
+			Sys.println('${tracePrefix}Could not import class "${path}" because this script is marked as safe.');
+	}
+
 	static var traceInfo:Lua_Debug = {};
 	static inline function scriptTrace(s:String):Int {
 		Lua.getstack(currentLua.luaState, 1, traceInfo);

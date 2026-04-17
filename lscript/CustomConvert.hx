@@ -1,6 +1,5 @@
 package lscript;
 
-import cpp.RawPointer;
 import lscript.LScript;
 import lscript.ClassWorkarounds;
 
@@ -18,78 +17,78 @@ class CustomConvert {
 	 * @param stackPos The position of the lua variable.
 	 * @param inTable Default to false. This var is included because functions break in tables.
 	 */
-	 public static function fromLua(stackPos:Int, ?includeIndexes:Bool = false):Dynamic {
-		var ret:Any = null;
-		final curLua = LScript.currentLua; // Mainly for the local function support but makes some lines shorter and nicer.
-		final luaState = curLua.luaState;
+  	 public static function fromLua(stackPos:Int, ?includeIndexes:Bool = false):Dynamic {
+  		var ret:Any = null;
+  		final curLua = LScript.currentLua; // Mainly for the local function support but makes some lines shorter and nicer.
+  		final luaState = curLua.luaState;
 
-		switch(Lua.type(luaState, stackPos)) {
-			case Lua.LUA_TNIL:
+  		switch(Lua.type(luaState, stackPos)) {
+ 			case Lua.LUA_TNIL:
 				ret = null;
-			case Lua.LUA_TBOOLEAN:
+ 			case Lua.LUA_TBOOLEAN:
 				ret = Lua.toboolean(luaState, stackPos);
-			case Lua.LUA_TNUMBER:
+ 			case Lua.LUA_TNUMBER:
 				ret = Lua.tonumber(luaState, stackPos);
-			case Lua.LUA_TSTRING:
+ 			case Lua.LUA_TSTRING:
 				ret = Lua.tostring(luaState, stackPos);
-			case Lua.LUA_TTABLE:
+ 			case Lua.LUA_TTABLE:
 				ret = toHaxeObj(stackPos);
-			case Lua.LUA_TFUNCTION:
+ 			case Lua.LUA_TFUNCTION:
 				if (Lua.tocfunction(luaState, stackPos) != ClassWorkarounds.workaroundCallable) {
-					Lua.pushvalue(luaState, stackPos);
-					final ref = LuaL.ref(luaState, Lua.LUA_REGISTRYINDEX);
+   					Lua.pushvalue(luaState, stackPos);
+   					final ref = LuaL.ref(luaState, Lua.LUA_REGISTRYINDEX);
 
-					function callLocalLuaFunc(params:Array<Dynamic>) {
-						final lastLua:LScript = LScript.currentLua;
-						LScript.currentLua = curLua;
+   					function callLocalLuaFunc(params:Array<Dynamic>) {
+  						final lastLua:LScript = LScript.currentLua;
+  						LScript.currentLua = curLua;
 
-						Lua.settop(luaState, 0);
-						Lua.rawgeti(luaState, Lua.LUA_REGISTRYINDEX, ref);
+  						Lua.settop(luaState, 0);
+  						Lua.rawgeti(luaState, Lua.LUA_REGISTRYINDEX, ref);
 
-						if (!Lua.isfunction(luaState, -1))
-							return null;
+  						if (!Lua.isfunction(luaState, -1))
+ 							return null;
 
-						//Pushes the parameters of the script.
-						var nparams:Int = 0;
-						if (params != null && params.length > 0) {
-							nparams = params.length;
-							for (val in params)
+  						//Pushes the parameters of the script.
+  						var nparams:Int = 0;
+  						if (params != null && params.length > 0) {
+ 							nparams = params.length;
+ 							for (val in params)
 								CustomConvert.toLua(val);
-						}
+  						}
 
-						//Calls the function of the script. If it does not return 0, will trace what went wrong.
-						if (Lua.pcall(luaState, nparams, 1, 0) != 0) {
-							Sys.println('${curLua.tracePrefix}Function(LOCAL) Error: ${Lua.tostring(luaState, -1)}');
-							return null;
-						}
+  						//Calls the function of the script. If it does not return 0, will trace what went wrong.
+  						if (Lua.pcall(luaState, nparams, 1, 0) != 0) {
+ 							Sys.println('${curLua.tracePrefix}Function(LOCAL) Error: ${Lua.tostring(luaState, -1)}');
+ 							return null;
+  						}
 
-						//Grabs and returns the result of the function.
-							final v = CustomConvert.fromLua(Lua.gettop(luaState));
-						Lua.settop(luaState, 0);
-						LScript.currentLua = lastLua;
-						return v;
-					}
+  						//Grabs and returns the result of the function.
+  						final v = CustomConvert.fromLua(Lua.gettop(luaState));
+  						Lua.settop(luaState, 0);
+  						LScript.currentLua = lastLua;
+  						return v;
+   					}
 
-					ret = Reflect.makeVarArgs(callLocalLuaFunc);
+   					ret = Reflect.makeVarArgs(callLocalLuaFunc);
 				}
-			case Lua.LUA_TNONE:
-			    ret = null;
-			case idk:
+ 			case Lua.LUA_TNONE:
+ 			    ret = null;
+ 			case idk:
 				ret = null;
 				Sys.println('${curLua.tracePrefix} Return value not supported: ${Std.string(idk)} - $stackPos');
-		}
+  		}
 
-		//This is to check if the object has a special field and converts it back if so.
-		if (ret is Dynamic && Reflect.hasField(ret, "__special_id")) {//Special Var.
-			final specID = Reflect.field(ret, "__special_id");
-			if (includeIndexes) {
+  		//This is to check if the object has a special field and converts it back if so.
+  		if (ret is Dynamic && Reflect.hasField(ret, "__special_id")) {//Special Var.
+ 			final specID = Reflect.field(ret, "__special_id");
+ 			if (includeIndexes) {
 				curSpecial = specID;
 				curParent = Reflect.field(ret, "__parent_id");
-			}
-			return curLua.specialVars[specID];
-		}
-		return ret;
-	}
+ 			}
+ 			return curLua.specialVars[specID];
+  		}
+  		return ret;
+   	}
 
 	public static function addToMetatable(val:Dynamic, parentIndex:Int):Int {
 		final lua = LScript.currentLua;
